@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+django-cors-headers = "*"
+python-dotenv = "*"
+djangorestframework = "*"
+psycopg2-binary = "*"
+drf-yasg = "*"
+
+[dev-packages]
+mypy = "*"
+isort = "*"
+pytest = "*"
+pylint = "*"
+djangorestframework-stubs = "*"
+pre-commit = "*"
+black = "*"
+django-stubs = "*"
+pytest-cov = "*"
+
+[requires]
+python_version = "3.11"
