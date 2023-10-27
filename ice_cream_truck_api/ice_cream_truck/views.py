@@ -2,30 +2,97 @@ from typing import Any
 
 from django.db.models.query import QuerySet
 from django.db.models import Sum, F
-from django.core.management import call_command
+from django.contrib.auth import get_user_model
 
 from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import FoodItem, IceCreamTruck, Customer, Transaction
+from .models import FoodItem, IceCreamTruck, Customer, Transaction, Flavor
 from .serializers import FoodItemSerializer, IceCreamTruckSerializer
+
+User = get_user_model()
 
 
 class AddDefaultDataView(APIView):
     def post(self, request) -> Response:
-        try:
-            # Call the management command
-            call_command("add_default_data")
-            response_data: dict[str, Any] = {
-                "message": "Default data added successfully."
-            }
-            status_code: int = 200
-        except Exception as e:
+        response_data: dict[str, Any]
+        status_code: int
+
+        if self.data_already_added():
             response_data = {"message": "Data already added."}
             status_code = 400
+        else:
+            # Create superuser
+            User.objects.create(
+                username="zolazookeep",
+                email="zola@zookeep.com",
+                password="root",
+                first_name="Zola",
+                last_name="Zookeep",
+                is_staff=True,
+                is_superuser=True,
+            )
+            # Create Ice Cream Truck
+            ice_cream_truck: IceCreamTruck = IceCreamTruck.objects.create(
+                name="Krispy Kream"
+            )
+
+            # Create food items if they don't exist
+            self.create_food_items(ice_cream_truck)
+
+            response_data = {"message": "Default data added successfully."}
+            status_code = 200
 
         return Response(response_data, status=status_code)
+
+    def data_already_added(self) -> bool:
+        # Check if IceCreamTruck, FoodItem, and Flavor objects exist
+        return (
+            User.objects.filter(username="zolazookeep").exists()
+            and IceCreamTruck.objects.filter(name="Krispy Kream").exists()
+            and FoodItem.objects.filter(name="Ice Cream").exists()
+        )
+
+    def create_food_items(self, ice_cream_truck: IceCreamTruck) -> None:
+        # Create food items
+        food_items: list[FoodItem] = [
+            FoodItem(name="Ice Cream", price=3.99, ice_cream_truck=ice_cream_truck),
+            FoodItem(name="Shaved Ice", price=2.99, ice_cream_truck=ice_cream_truck),
+            FoodItem(name="Snack Bar", price=1.99, ice_cream_truck=ice_cream_truck),
+        ]
+        FoodItem.objects.bulk_create(food_items)
+
+        # Create flavorss
+        self.create_flavors()
+
+    def create_flavors(self) -> None:
+        # Create flavors for Ice Cream
+        ice_cream: FoodItem = FoodItem.objects.get(name="Ice Cream")
+        flavors: list[Flavor] = [
+            Flavor(name="Chocolate", food_item=ice_cream),
+            Flavor(name="Pistachio", food_item=ice_cream),
+            Flavor(name="Strawberry", food_item=ice_cream),
+            Flavor(name="Mint", food_item=ice_cream),
+        ]
+
+        # Create flavors for Shaved Ice
+        shaved_ice: FoodItem = FoodItem.objects.get(name="Shaved Ice")
+        flavors += [
+            Flavor(name="Blueberry", food_item=shaved_ice),
+            Flavor(name="Orange", food_item=shaved_ice),
+            Flavor(name="Strawberry", food_item=shaved_ice),
+        ]
+
+        # Create flavors for Snack Bar
+        snack_bar: FoodItem = FoodItem.objects.get(name="Snack Bar")
+        flavors += [
+            Flavor(name="Klondike", food_item=snack_bar),
+            Flavor(name="Magnum", food_item=snack_bar),
+            Flavor(name="Twister", food_item=snack_bar),
+        ]
+
+        Flavor.objects.bulk_create(flavors)
 
 
 class FoodItemDetailView(generics.RetrieveAPIView):
