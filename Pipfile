@@ -21,6 +21,7 @@ pre-commit = "*"
 black = "*"
 django-stubs = "*"
 pytest-cov = "*"
+drf-yasg-stubs = "*"
 
 [requires]
 python_version = "3.11"
