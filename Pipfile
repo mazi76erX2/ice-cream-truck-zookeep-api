@@ -10,6 +10,7 @@ python-dotenv = "*"
 djangorestframework = "*"
 psycopg2-binary = "*"
 drf-yasg = "*"
+uvicorn = "*"
 
 [dev-packages]
 mypy = "*"
